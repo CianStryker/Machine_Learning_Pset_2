@@ -1,0 +1,126 @@
+---
+title: 'Problem Set #2'
+author: "Cian Stryker"
+date: "10/1/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+library(AER)
+library(tidyverse)
+library(fastDummies)
+```
+
+# Conceptual Questions
+
+
+#### Question 1
+
+\hfill\break
+
+a.)
+
+b.)
+
+c.)
+
+d.)
+
+\hfill\break
+
+
+#### Question 2
+
+\hfill\break
+
+
+#### Question 3
+
+\hfill\break
+
+
+#### Question 4
+
+\hfill\break
+
+
+#### Question 5
+
+\hfill\break
+
+
+
+#### Question 6
+
+\hfill\break
+
+
+
+#### Question 7
+
+\hfill\break
+
+
+#### Question 8
+
+\hfill\break
+
+
+
+#### Question 9
+
+\hfill\break
+
+
+
+\hfill\break
+
+
+# Data Questions
+
+
+```{r Setting up and Question 1}
+
+data("Fatalities")
+
+rows <- Fatalities %>%
+  nrow()
+
+rows_no_nas <- Fatalities %>%
+  drop_na() %>%
+  nrow()
+
+data <- Fatalities %>%
+  drop_na()
+
+```
+
+1.) One observation has missing values for at least one feature. 
+
+```{r Question 2}
+
+ q3 <- sapply(data, class)
+
+```
+
+2.) There are four categorical variables in the data set: state, breath, jail, and service. State has 50 different classes, but breath, jail, and service each only have two classes. 
+
+```{r Question 3}
+
+data2 <- data %>%
+  dummy_cols(select_columns = c("breath", "jail", "service"), remove_selected_columns = TRUE, remove_first_dummy = TRUE)
+
+model_1 <- lm(data = data2, fatal ~.)
+
+summary_1 <- summary(model_1)
+
+```
+
+3.) The adjusted R^2 value is 0.999
+
+```{r Question 4}
+
+```
+

@@ -14,6 +14,7 @@ library(fastDummies)
 library(glmnet)
 library(sjmisc)
 library(class)
+library(ggthemes)
 library(data.table)
 
 ```
@@ -229,15 +230,13 @@ check2 <- data.frame(check) %>%
   }
 
 
-  knn_cv_error <- cross_validation_KNN(data_x = data2[,-71],
+knn_cv_error <- cross_validation_KNN(data_x = data2[,-71],
                                        data_y = data2[,71],
                                        k_seq = seq(20),
                                        kfolds = 5)
 #  View(knn_cv_error)
   
-  mean_cv_error <- rowMeans(knn_cv_error)
-
-#  which.min(mean_cv_error)
+mean_cv_error <- data.frame(k = 1:20, mean_cv = rowMeans(knn_cv_error))
 
 ```
 #### 5.) 
@@ -245,11 +244,18 @@ The best k according to CV is 3.
 
 ```{r Question 6}
 
-  plot(seq(20),
-       mean_cv_error,
-       type = "l",
-       main = "Mean CV Error Rate as a Function of k",
-       ylab = "Mean CV MSE",
-       xlab = "k")
+ggplot(mean_cv_error, aes(x = k, y = mean_cv)) +
+  geom_point() +
+  geom_line() +
+  labs(
+    title = "Mean CV Error Rate as a Function of k",
+    x = "K",
+    y = "Mean CV MSE"
+  ) +
+  theme_economist() +
+  theme(plot.title = element_text(hjust = 0.5), 
+        axis.title.y = element_text(vjust= 5),
+        axis.title.x = element_text(vjust = -2))
+
 ```
 

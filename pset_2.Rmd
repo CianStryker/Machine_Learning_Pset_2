@@ -2,7 +2,7 @@
 title: 'Problem Set #2'
 author: "Cian Stryker"
 date: "10/1/2020"
-output: html_document
+output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
@@ -11,6 +11,11 @@ knitr::opts_chunk$set(echo = FALSE)
 library(AER)
 library(tidyverse)
 library(fastDummies)
+library(glmnet)
+library(sjmisc)
+library(class)
+library(data.table)
+
 ```
 
 # Conceptual Questions
@@ -19,8 +24,6 @@ library(fastDummies)
 #### Question 1
 
 \hfill\break
-
-a.)
 
 ```{r}
 Obs_1 = (0-1)^2 + (2-1)^2 + (2-1)^2
@@ -40,21 +43,19 @@ dist_6 = sqrt(Obs_6)
 d = (3 + 0.5 + 2.5)/3
 ```
 
-The Euclidean distance between observation 3 and the test point is 1.732. 
+a.) The Euclidean distance between observation 3 and the test point is 1.732. 
 
-b.)
 
-Our prediction would be Black because the closest observation to the test point is observation 4, which is black. 
+b.) Our prediction would be Black because the closest observation to the test point is observation 4, which is black. 
 
-c.)
 
-The three closest observations to the test point are observations 2, 4, and 5. Since observation 2 and 5 are white, our prediction with K = 3 would also be white. The majority of the closest three points are white. 
 
-d.)
+c.)The three closest observations to the test point are observations 2, 4, and 5. Since observation 2 and 5 are white, our prediction with K = 3 would also be white. The majority of the closest three points are white. 
 
-The prediction would be Y = 2 because the average of the three closest observations (2, 4, and 5) is 2. 
 
-\hfill\break
+d.)The prediction would be Y = 2 because the average of the three closest observations (2, 4, and 5) is 2. 
+
+
 
 
 #### Question 2
@@ -69,44 +70,38 @@ You would have 1,073,741,824 combinations with 30 potential covariates. This ind
 
 #### Question 3
 
-\hfill\break
 
+False
 
 #### Question 4
 
-\hfill\break
 
-I believe that I should side with Colleage A because KNN is non-parametric and will be able to work with the data that we have. Since we don't know anything about the error distribution or whether the relationship is linear, we should avoid linear regression. I think that KNN would be a good approach to this situation. 
+I believe that I should side with Colleage C because this is a large p (predictor) and small n (observation) situation. KNN does not have a lot of data to actually work with here (only thirty observations) and therefore using KNN would likely lead to overfitting. Similarly, the large amount of predictors means assuming a linear relationship would be inappropriate. OLS methods do not work when p > n, so a linear regression would not be appropriate either. We should not use either KNN or linear regression in this situation. 
 
 #### Question 5
 
-\hfill\break
 
-Colleague C may be concerned because QDA assumes that the measurments from each class are normally distributed, but with such a large dataset, that may not be the case. If it is not normally distributed then QDA would not be appropriate to use. 
+Colleague C may be concerned because QDA has to estimate a separate covariance matrix for each predictor in a model. In this example data we have 40,000, meaning using QDA would likely lead to very high variance. 
 
 #### Question 6
 
-\hfill\break
 
-I would expect that logistic regression would outperform LDA because all our predictors are categorical. 
+I would expect that logistic regression would outperform LDA because all our predictors are categorical and binary.  
 
 #### Question 7
 
-\hfill\break
 
-
+The shrinkage penalty for ridge regression is called L2-norm, which is the sum of the squared coefficients. 
 
 #### Question 8
 
-\hfill\break
 
-
+The shrinkage penalty for lasso regression is called L1-norm, which is the sum of the absolute coefficients. 
 
 #### Question 9
 
-\hfill\break
 
-
+The main difference between lasso and ridge regression is that ridge regression will not perform feature selection, i.e. the number of predictors will not change. Lasso regression will actually shrink predictor coefficients to zero, which will remove them from the model. Lasso regression will therefore perform feature selection and remove predictors, which improves interpretability. 
 
 \hfill\break
 
@@ -130,7 +125,8 @@ data <- Fatalities %>%
 
 ```
 
-1.) One observation has missing values for at least one feature. 
+#### 1.) 
+One observation has missing values for at least one feature. 
 
 ```{r Question 2}
 
@@ -138,22 +134,122 @@ data <- Fatalities %>%
 
 ```
 
-2.) There are four categorical variables in the data set: state, breath, jail, and service. State has 50 different classes, but breath, jail, and service each only have two classes. 
+#### 2.) 
+There are four categorical variables in the data set: state, breath, jail, and service. State has 50 different classes, but breath, jail, and service each only have two classes. 
 
 ```{r Question 3}
 
 data2 <- data %>%
-  dummy_cols(select_columns = c("state", "breath", "jail", "service"), remove_selected_columns = TRUE, remove_first_dummy = TRUE)
+  dummy_cols(select_columns = c("state", "breath", "jail", "service"), remove_selected_columns = TRUE, remove_first_dummy = TRUE) %>%
+  select(-fatal, -nfatal, -fatal1517, -nfatal1517, -fatal1820, -nfatal1820, -fatal2124, -nfatal2124, -afatal) %>%
+  move_columns(sfatal)
 
-model_1 <- lm(data = data2, fatal ~.)
+model_1 <- lm(data = data2, sfatal ~.)
 
 summary_1 <- summary(model_1)
 
 ```
 
-3.) The adjusted R^2 value is 0.999
+#### 3.) 
+The adjusted R^2 value is 0.981
+
+#### 4.) 
+
+\hfill\break
+
 
 ```{r Question 4}
 
+set.seed(222)
+
+lasso_model <- cv.glmnet(x = data.matrix(data2[,1:70]),
+                         y = as.numeric(data2[,71]),
+                         nfold = 5,
+                         standardize = TRUE)
+
+# (round(lasso_model$cvm,3)) 
+# print(lasso_model$lambda.min,3)
+
+mse_min <- min(round(lasso_model$cvm,3))
+# print(mse_min)
+
+standard_error_min <- min(round(lasso_model$cvsd,3))
+# print(standard_error_min)
+
+check <- do.call( 'cbind', list(lambda = lasso_model$lambda,
+                                mean = lasso_model$cvm,
+                                sd = lasso_model$cvsd,
+                                cvup = lasso_model$cvup,
+                                cvlo = lasso_model$cvlo)) 
+
+check2 <- data.frame(check) %>%
+  arrange(mean) %>%
+  head(1) %>%
+  round(3)
+#  print()
+
+# print(round(lasso_model$lambda.1se,3))
+
+```
+
+  a.) The lambda with the lowest cross-validation error for 5 fold cross validation is 0.241.
+  
+  b.) The cross validation error was 316.485.
+  
+  c.) The standard error of the mean cross-validation error for this value of lambda was 73.257.
+  
+  d.) The largest value of lamda whose mean cross-validation error was within one standard deviation of the lowest cross-validation is 1.699. 
+
+
+
+```{r Question 5}
+
+  set.seed(222)
+
+  cross_validation_KNN  <- function(data_x, data_y, k_seq, kfolds) {
+    
+    fold_ids      <- rep(seq(kfolds), ceiling(nrow(data_x) / kfolds))
+    fold_ids      <- fold_ids[1:nrow(data_x)]
+    fold_ids      <- sample(fold_ids, length(fold_ids))
+    CV_error_mtx  <- matrix(0, 
+                            nrow = length(k_seq), 
+                            ncol = kfolds)
+    for (k in k_seq) {
+      for (fold in 1:kfolds) {
+
+        knn_fold_model    <- knn(train = data_x[which(fold_ids != fold),],
+                                 test = data_x[which(fold_ids == fold),],
+                                 cl = data_y[which(fold_ids != fold)],
+                                 k = k)
+        CV_error_mtx[k,fold]  <- mean(knn_fold_model !=
+                                      data_y[which(fold_ids == fold)])
+      }
+    }
+    return(CV_error_mtx)
+  }
+
+
+  knn_cv_error <- cross_validation_KNN(data_x = data2[,-71],
+                                       data_y = data2[,71],
+                                       k_seq = seq(20),
+                                       kfolds = 5)
+#  View(knn_cv_error)
+  
+  mean_cv_error <- rowMeans(knn_cv_error)
+
+#  which.min(mean_cv_error)
+
+```
+#### 5.) 
+The best k according to CV is 3. 
+
+```{r Question 6}
+
+  plot(seq(20),
+       mean_cv_error,
+       type = "l",
+       main = "Mean CV Error Rate as a Function of k",
+       ylab = "Mean CV MSE",
+       xlab = "k")
 ```
 

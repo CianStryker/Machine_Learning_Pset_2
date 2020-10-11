@@ -51,10 +51,10 @@ b.) Our prediction would be Black because the closest observation to the test po
 
 
 
-c.)The three closest observations to the test point are observations 2, 4, and 5. Since observation 2 and 5 are white, our prediction with K = 3 would also be white. The majority of the closest three points are white. 
+c.) The three closest observations to the test point are observations 2, 4, and 5. Since observation 2 and 5 are white, our prediction with K = 3 would also be white. The majority of the closest three points are white. 
 
 
-d.)The prediction would be Y = 2 because the average of the three closest observations (2, 4, and 5) is 2. 
+d.) The prediction would be Y = 2 because the average of the three closest observations (2, 4, and 5) is 2. 
 
 
 
@@ -82,7 +82,7 @@ I believe that I should side with Colleage C because this is a large p (predicto
 #### Question 5
 
 
-Colleague C may be concerned because QDA has to estimate a separate covariance matrix for each predictor in a model. In this example data we have 40,000, meaning using QDA would likely lead to very high variance. 
+Colleague C may be concerned because QDA has to estimate a separate covariance matrix for each predictor in a model. In this example data we have 40,000 meaning using QDA would likely lead to very high variance. 
 
 #### Question 6
 
@@ -136,12 +136,12 @@ One observation has missing values for at least one feature.
 ```
 
 #### 2.) 
-There are four categorical variables in the data set: state, breath, jail, and service. State has 50 different classes, but breath, jail, and service each only have two classes. 
+There are five categorical variables in the data set: year, state, breath, jail, and service. State has 50 different classes, but breath, jail, and service each only have two classes. 
 
 ```{r Question 3}
 
 data2 <- data %>%
-  dummy_cols(select_columns = c("state", "breath", "jail", "service"), remove_selected_columns = TRUE, remove_first_dummy = TRUE) %>%
+  dummy_cols(select_columns = c("state", "breath", "jail", "service", "year"), remove_selected_columns = TRUE, remove_first_dummy = TRUE) %>%
   select(-fatal, -nfatal, -fatal1517, -nfatal1517, -fatal1820, -nfatal1820, -fatal2124, -nfatal2124, -afatal) %>%
   move_columns(sfatal)
 
@@ -163,8 +163,8 @@ The adjusted R^2 value is 0.981
 
 set.seed(222)
 
-lasso_model <- cv.glmnet(x = data.matrix(data2[,1:70]),
-                         y = as.numeric(data2[,71]),
+lasso_model <- cv.glmnet(x = data.matrix(data2[,1:75]),
+                         y = as.numeric(data2[,76]),
                          nfold = 5,
                          standardize = TRUE)
 
@@ -178,13 +178,13 @@ standard_error_min <- min(round(lasso_model$cvsd,3))
 # print(standard_error_min)
 
 check <- do.call( 'cbind', list(lambda = lasso_model$lambda,
-                                mean = lasso_model$cvm,
-                                sd = lasso_model$cvsd,
+                                cross_validation_error = lasso_model$cvm,
+                                standard_error = lasso_model$cvsd,
                                 cvup = lasso_model$cvup,
                                 cvlo = lasso_model$cvlo)) 
 
 check2 <- data.frame(check) %>%
-  arrange(mean) %>%
+  arrange(cross_validation_error) %>%
   head(1) %>%
   round(3)
 #  print()
@@ -193,54 +193,82 @@ check2 <- data.frame(check) %>%
 
 ```
 
-  a.) The lambda with the lowest cross-validation error for 5 fold cross validation is 0.241.
+  a.) The lambda with the lowest cross-validation error for 5 fold cross validation is 0.095.
   
-  b.) The cross validation error was 316.485.
+  b.) The cross validation error was 296.596.
   
-  c.) The standard error of the mean cross-validation error for this value of lambda was 73.257.
+  c.) The standard error of the mean cross-validation error for this value of lambda was 47.12.
   
-  d.) The largest value of lamda whose mean cross-validation error was within one standard deviation of the lowest cross-validation is 1.699. 
-
+  d.) The largest value of lamda whose mean cross-validation error was within one standard deviation of the lowest cross-validation is 0.807. 
 
 
 ```{r Question 5}
 
-  set.seed(222)
+set.seed(222)
+cross_validation_KNN  <- function(data_x, data_y, k_seq, kfolds) {
+  fold_ids      <- rep(seq(kfolds), ceiling(nrow(data_x) / kfolds))
+  fold_ids      <- fold_ids[1:nrow(data_x)]
+  fold_ids      <- sample(fold_ids, length(fold_ids))
+  CV_error_mtx  <- matrix(0, 
+                          nrow = length(k_seq), 
+                          ncol = kfolds)
+  for (k in k_seq) {
+    for (fold in 1:kfolds) {
 
-  cross_validation_KNN  <- function(data_x, data_y, k_seq, kfolds) {
-    
-    fold_ids      <- rep(seq(kfolds), ceiling(nrow(data_x) / kfolds))
-    fold_ids      <- fold_ids[1:nrow(data_x)]
-    fold_ids      <- sample(fold_ids, length(fold_ids))
-    CV_error_mtx  <- matrix(0, 
-                            nrow = length(k_seq), 
-                            ncol = kfolds)
-    for (k in k_seq) {
-      for (fold in 1:kfolds) {
-
-        knn_fold_model    <- knn(train = data_x[which(fold_ids != fold),],
-                                 test = data_x[which(fold_ids == fold),],
-                                 cl = data_y[which(fold_ids != fold)],
-                                 k = k)
-        CV_error_mtx[k,fold]  <- mean(knn_fold_model !=
-                                      data_y[which(fold_ids == fold)])
-      }
+      knn_fold_model    <- knn(train = data_x[which(fold_ids != fold),],
+                               test = data_x[which(fold_ids == fold),],
+                               cl = data_y[which(fold_ids != fold)],
+                               k = k)
+      CV_error_mtx[k,fold]  <- mean(knn_fold_model !=
+                                    data_y[which(fold_ids == fold)])
     }
-    return(CV_error_mtx)
   }
+  return(CV_error_mtx)
+}
 
-
-knn_cv_error <- cross_validation_KNN(data_x = data2[,-71],
-                                       data_y = data2[,71],
+knn_cv_error <- cross_validation_KNN(data_x = data2[,-76],
+                                       data_y = data2[,76],
                                        k_seq = seq(20),
                                        kfolds = 5)
-#  View(knn_cv_error)
-  
-mean_cv_error <- data.frame(k = 1:20, mean_cv = rowMeans(knn_cv_error))
+mean_cv_error <- data.frame(k = 1:20, mean_cv = rowMeans(knn_cv_error)) %>%
+  arrange(mean_cv)
+
+# print(mean_cv_error)
 
 ```
 #### 5.) 
-The best k according to CV is 3. 
+The best k according to CV is 12.
+
+
+```{r echo=TRUE}
+
+set.seed(222)
+cross_validation_KNN  <- function(data_x, data_y, k_seq, kfolds) {
+  fold_ids      <- rep(seq(kfolds), ceiling(nrow(data_x) / kfolds))
+  fold_ids      <- fold_ids[1:nrow(data_x)]
+  fold_ids      <- sample(fold_ids, length(fold_ids))
+  CV_error_mtx  <- matrix(0, 
+                          nrow = length(k_seq), 
+                          ncol = kfolds)
+  for (k in k_seq) {
+    for (fold in 1:kfolds) {
+
+      knn_fold_model    <- knn(train = data_x[which(fold_ids != fold),],
+                               test = data_x[which(fold_ids == fold),],
+                               cl = data_y[which(fold_ids != fold)],
+                               k = k)
+      CV_error_mtx[k,fold]  <- mean(knn_fold_model !=
+                                    data_y[which(fold_ids == fold)])
+    }
+  }
+  return(CV_error_mtx)
+}
+```
+
+#### 6.)
+
+\hfill\break
+
 
 ```{r Question 6}
 
@@ -254,8 +282,8 @@ ggplot(mean_cv_error, aes(x = k, y = mean_cv)) +
   ) +
   theme_economist() +
   theme(plot.title = element_text(hjust = 0.5), 
-        axis.title.y = element_text(vjust= 5),
-        axis.title.x = element_text(vjust = -2))
+        axis.title.y = element_text(vjust= 4),
+        axis.title.x = element_text(vjust = -1))
 
 ```
 

@@ -50,7 +50,6 @@ a.) The Euclidean distance between observation 3 and the test point is 1.732.
 b.) Our prediction would be Black because the closest observation to the test point is observation 4, which is black. 
 
 
-
 c.) The three closest observations to the test point are observations 2, 4, and 5. Since observation 2 and 5 are white, our prediction with K = 3 would also be white. The majority of the closest three points are white. 
 
 
@@ -71,18 +70,17 @@ You would have 1,073,741,824 combinations with 30 potential covariates. This ind
 
 #### Question 3
 
-
 False
 
 #### Question 4
 
 
-I believe that I should side with Colleage C because this is a large p (predictor) and small n (observation) situation. KNN does not have a lot of data to actually work with here (only thirty observations) and therefore using KNN would likely lead to overfitting. Similarly, the large amount of predictors means assuming a linear relationship would be inappropriate. OLS methods do not work when p > n, so a linear regression would not be appropriate either. We should not use either KNN or linear regression in this situation. 
+I believe that I should side with Colleague C because this is a large p (predictor) and small n (observation) situation. KNN does not have a lot of data to actually work with here (only thirty observations) and therefore using KNN would likely lead to over fitting. Similarly, the large amount of predictors means assuming a linear relationship would be inappropriate. OLS methods do not work when p > n, so a linear regression would not be appropriate either. We should not use either KNN or linear regression in this situation. 
 
 #### Question 5
 
 
-Colleague C may be concerned because QDA has to estimate a separate covariance matrix for each predictor in a model. In this example data we have 40,000 meaning using QDA would likely lead to very high variance. 
+Colleague C may be concerned because QDA has to estimate a separate co-variance matrix for each predictor in a model. In this example data we have 40,000 predictors meaning using QDA would likely lead to very high variance and over fitting. 
 
 #### Question 6
 
@@ -92,12 +90,12 @@ I would expect that logistic regression would outperform LDA because all our pre
 #### Question 7
 
 
-The shrinkage penalty for ridge regression is called L2-norm, which is the sum of the squared coefficients. 
+The shrinkage penalty for ridge regression is called L2, which is the square of the magnitude of the coefficients. 
 
 #### Question 8
 
 
-The shrinkage penalty for lasso regression is called L1-norm, which is the sum of the absolute coefficients. 
+The shrinkage penalty for lasso regression is called L1, which is the absolute value of the magnitude of the coefficients. 
 
 #### Question 9
 
@@ -187,7 +185,7 @@ check2 <- data.frame(check) %>%
   arrange(cross_validation_error) %>%
   head(1) %>%
   round(3)
-#  print()
+# print()
 
 # print(round(lasso_model$lambda.1se,3))
 
@@ -199,7 +197,7 @@ check2 <- data.frame(check) %>%
   
   c.) The standard error of the mean cross-validation error for this value of lambda was 47.12.
   
-  d.) The largest value of lamda whose mean cross-validation error was within one standard deviation of the lowest cross-validation is 0.807. 
+  d.) The largest value of lambda whose mean cross-validation error was within one standard deviation of the lowest cross-validation is 0.807. 
 
 
 ```{r Question 5}
